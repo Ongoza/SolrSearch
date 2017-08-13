@@ -1,0 +1,105 @@
+﻿взаимодействие стека хадуб
+https://www.youtube.com/watch?v=kXzn1ATt58Y
+
+
+shell
+hbase shell
+https://learnhbase.wordpress.com/2013/03/02/hbase-shell-commands/
+
+
+list of tables -> list
+create table -> create 't3', {NAME => 'f1, VER => ‘dd2’'}, {NAME => 'f2'}, {NAME => 'f3'}
+show table описание -> describe 't1'
+вывести всю таблицу 
+put data to table-> put 't3', 'r1', 'f1', 'value_my_data'
+number of rows -> count ‘t1’
+get data -> get ‘t1’, ‘r3’
+
+
+create 'table_2', {NAME => 'f1'}
+put ‘table_2’, ‘r1; ‘f1’, ‘start’
+deleteall ‘table_2’, ‘r1’, ‘f1’
+scan ‘table_2’, {RAW=>true} включая удаленные строки
+scan ‘table_2’,{FILTER=>”KeyOnlyFilter()”}  - показать только ключи
+
+
+scan 'table_1', {COLUMNS=>'name', LIMIT=>2}
+put ‘table_1’, 'r555'; 'name', '4444'
+
+
+
+
+
+
+javac -cp `hbase classpath` HBaseConnector.java 
+java -cp `hbase classpath` HBaseConnector
+
+
+
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Файл для тестирования записи/чтения бинарных данных в hbase
+HBaseConnector.java
+
+
+import java.io.*;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.hbase.KeyValue;
+
+
+public class HBaseConnector {
+
+
+        public static void main(String[] args) throws IOException {
+
+
+                Configuration config = HBaseConfiguration.create();
+                HTable table = new HTable(config, "table_1");
+                //Put p1 = new Put(Bytes.toBytes("r4"));
+                //        p1.add(Bytes.toBytes("name"), Bytes.toBytes(""), Bytes.toBytes("6666"));
+                //table.put(p1);
+                Put p = new Put(Bytes.toBytes("r2")); 
+                // будущее имя строки в штаблице
+                try {
+                        File file = new File("2010.xlsx"); 
+                        // имя файла
+                        FileInputStream fis = new FileInputStream(file);
+                        byte []arr= new byte[(int)file.length()];
+                        fis.read(arr,0,arr.length);
+                        p.add(Bytes.toBytes("name"), Bytes.toBytes(""), arr); 
+                        //         имя столбца второе значение пустое, но может содержать расширение для имени столбца, 3 значение сами данные
+                        table.put(p);
+                        fis.close();
+                        System.out.println("e4\n");
+                }
+                catch (IOException ex) {
+                        System.out.println("error read from file \n");
+                }
+
+
+                Get g = new Get(Bytes.toBytes("r2"));
+                Result r = table.get(g);
+                byte[] b2 = r.getValue(Bytes.toBytes("name"), Bytes.toBytes(""));
+                System.out.println("e6\n");
+                // создаем файл для записи содержимого таблицы
+                try {
+                        File myFile = new File("test.xlsx");
+                        FileOutputStream fs = new FileOutputStream(myFile);
+                        fs.write(b2);
+                        System.out.println("e8\n");
+                        fs.close();
+                        fs = null;
+                        }
+                catch (IOException ex) {
+                        System.out.println("error write to file \n");
+                        }
+        }
+}
